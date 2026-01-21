@@ -1,3 +1,7 @@
+const express = require('express');
+const sqlite3 = require('sqlite3').verbose();
+const path = require('path');
+
 const gameId = window.location.pathname.split('/')[2];
 console.log('Game ID:', gameId);
 
