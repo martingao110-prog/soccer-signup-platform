@@ -4,4 +4,109 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Soccer Game Signup</title>
-    <link rel="stylesheet" href="style
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="signup-card">
+            <div id="loading">⚽ Loading game details...</div>
+            
+            <div id="game-info" style="display: none;">
+                <h1>⚽ <span id="game-title"></span></h1>
+                <div class="game-details">
+                    <p><strong>📅 Date:</strong> <span id="game-date"></span></p>
+                    <p><strong>🕐 Time:</strong> <span id="game-time"></span></p>
+                    <p><strong>📍 Location:</strong> <span id="game-location"></span></p>
+                    <p><strong>💰 Cost:</strong> $<span id="game-cost"></span></p>
+                    <p><strong>👥 Players:</strong> <span id="current-players"></span>/<span id="max-players"></span></p>
+                </div>
+
+                <form id="signup-form">
+                    <h2>Sign Up Now!</h2>
+                    
+                    <div class="form-group">
+                        <label for="name">Your Name:</label>
+                        <input type="text" id="name" required placeholder="Enter your full name">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="position">Preferred Position:</label>
+                        <select id="position" required>
+                            <option value="">Choose your position</option>
+                            <option value="Goalkeeper">🥅 Goalkeeper</option>
+                            <option value="Defender">🛡️ Defender</option>
+                            <option value="Midfielder">⚡ Midfielder</option>
+                            <option value="Forward">🎯 Forward</option>
+                            <option value="Any">🔄 Any Position</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="age">Age:</label>
+                        <input type="number" id="age" min="16" max="60" required placeholder="Your age">
+                    </div>
+
+                    <div class="skills-section">
+                        <h3>Rate Your Skills (1-5 stars)</h3>
+                        
+                        <div class="skill-group">
+                            <label>Speed:</label>
+                            <div class="star-rating" data-skill="speed">
+                                <span class="star" data-value="1">⭐</span>
+                                <span class="star" data-value="2">⭐</span>
+                                <span class="star" data-value="3">⭐</span>
+                                <span class="star" data-value="4">⭐</span>
+                                <span class="star" data-value="5">⭐</span>
+                            </div>
+                        </div>
+
+                        <div class="skill-group">
+                            <label>Passing:</label>
+                            <div class="star-rating" data-skill="passing">
+                                <span class="star" data-value="1">⭐</span>
+                                <span class="star" data-value="2">⭐</span>
+                                <span class="star" data-value="3">⭐</span>
+                                <span class="star" data-value="4">⭐</span>
+                                <span class="star" data-value="5">⭐</span>
+                            </div>
+                        </div>
+
+                        <div class="skill-group">
+                            <label>Shooting:</label>
+                            <div class="star-rating" data-skill="shooting">
+                                <span class="star" data-value="1">⭐</span>
+                                <span class="star" data-value="2">⭐</span>
+                                <span class="star" data-value="3">⭐</span>
+                                <span class="star" data-value="4">⭐</span>
+                                <span class="star" data-value="5">⭐</span>
+                            </div>
+                        </div>
+
+                        <div class="skill-group">
+                            <label>Defending:</label>
+                            <div class="star-rating" data-skill="defending">
+                                <span class="star" data-value="1">⭐</span>
+                                <span class="star" data-value="2">⭐</span>
+                                <span class="star" data-value="3">⭐</span>
+                                <span class="star" data-value="4">⭐</span>
+                                <span class="star" data-value="5">⭐</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="submit">⚽ Sign Me Up!</button>
+                </form>
+
+                <div id="message"></div>
+            </div>
+
+            <div id="game-full" style="display: none;">
+                <h2>😔 Game is Full</h2>
+                <p>Sorry, this game has reached maximum capacity.</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="signup.js"></script>
+</body>
+</html>
