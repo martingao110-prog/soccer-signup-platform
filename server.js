@@ -51,6 +51,11 @@ app.get('/admin', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'admin.html'));
 });
 
+// Add this route with your other routes
+app.get('/signups/:gameId', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'signups.html'));
+});
+
 // Handle 404 for missing files
 app.use((req, res) => {
   res.status(404).send(`
