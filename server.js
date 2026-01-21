@@ -38,6 +38,7 @@ db.serialize(() => {
 });
 
 // Routes
+// Routes
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
@@ -48,6 +49,14 @@ app.get('/signup/:gameId', (req, res) => {
 
 app.get('/admin', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'admin.html'));
+});
+
+// Handle 404 for missing files
+app.use((req, res) => {
+  res.status(404).send(`
+    <h1>404 - Page Not Found</h1>
+    <p>Go to <a href="/admin">Admin Panel</a> to create games</p>
+  `);
 });
 
 // Get game details
