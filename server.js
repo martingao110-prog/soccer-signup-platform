@@ -189,10 +189,6 @@ app.get('/admin', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'admin.html'));
 });
 
-app.get('/signups/:gameId', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'signups.html'));
-});
-
 app.use((req, res) => {
   console.log('404 - Route not found:', req.method, req.url);
   
