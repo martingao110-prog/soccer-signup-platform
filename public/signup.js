@@ -1,13 +1,6 @@
-Absolutely! Here's the complete JavaScript code for the signup functionality:
-
-### Create public/signup.js
-1. **Click "Add file" → "Create new file"**
-2. **Filename:** `public/signup.js`
-3. **Complete Content:**
-
-```javascript
 // Get game ID from URL
 const gameId = window.location.pathname.split('/')[2];
+console.log('Game ID:', gameId);
 
 // Skill ratings storage
 const skillRatings = {
@@ -17,15 +10,9 @@ const skillRatings = {
     defending: 3
 };
 
-// DOM elements
-const loadingDiv = document.getElementById('loading');
-const gameInfoDiv = document.getElementById('game-info');
-const gameFullDiv = document.getElementById('game-full');
-const signupForm = document.getElementById('signup-form');
-const messageDiv = document.getElementById('message');
-
 // Initialize page
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('Page loaded, initializing...');
     loadGameDetails();
     setupStarRatings();
     setupForm();
@@ -33,28 +20,49 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Load game details from API
 async function loadGameDetails() {
+    console.log('Loading game details for ID:', gameId);
+    
     try {
         const response = await fetch(`/api/games/${gameId}`);
-        const data = await response.json();
+        console.log('API Response status:', response.status);
         
-        if (response.ok) {
-            displayGameDetails(data);
-        } else {
-            showError('Game not found or no longer available');
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
         }
+        
+        const data = await response.json();
+        console.log('Game data received:', data);
+        
+        displayGameDetails(data);
+        
     } catch (error) {
         console.error('Error loading game:', error);
-        showError('Unable to load game details. Please try again.');
+        document.getElementById('loading').innerHTML = `
+            <h3>❌ Error Loading Game</h3>
+            <p>Could not load game details. Please try again.</p>
+            <p><small>Error: ${error.message}</small></p>
+        `;
     }
 }
 
 // Display game information
 function displayGameDetails(game) {
+    console.log('Displaying game details:', game);
+    
+    const loadingDiv = document.getElementById('loading');
+    const gameInfoDiv = document.getElementById('game-info');
+    const gameFullDiv = document.getElementById('game-full');
+    
+    if (!loadingDiv || !gameInfoDiv) {
+        console.error('Required elements not found in HTML');
+        return;
+    }
+    
     loadingDiv.style.display = 'none';
     
     // Check if game is full
     if (game.current_players >= game.max_players) {
-        gameFullDiv.style.display = 'block';
+        if (gameFullDiv) gameFullDiv.style.display = 'block';
         return;
     }
     
@@ -62,33 +70,55 @@ function displayGameDetails(game) {
     gameInfoDiv.style.display = 'block';
     
     // Populate game details
-    document.getElementById('game-title').textContent = game.title;
-    document.getElementById('game-date').textContent = formatDate(game.date);
-    document.getElementById('game-time').textContent = game.time;
-    document.getElementById('game-location').textContent = game.location;
-    document.getElementById('game-cost').textContent = game.cost.toFixed(2);
-    document.getElementById('current-players').textContent = game.current_players || 0;
-    document.getElementById('max-players').textContent = game.max_players;
+    const elements = {
+        'game-title': game.title,
+        'game-date': formatDate(game.date),
+        'game-time': game.time,
+        'game-location': game.location,
+        'game-cost': game.cost.toFixed(2),
+        'current-players': game.current_players || 0,
+        'max-players': game.max_players
+    };
+    
+    for (const [id, value] of Object.entries(elements)) {
+        const element = document.getElementById(id);
+        if (element) {
+            element.textContent = value;
+        } else {
+            console.warn(`Element not found: ${id}`);
+        }
+    }
 }
 
 // Format date for display
 function formatDate(dateString) {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-    });
+    try {
+        const date = new Date(dateString);
+        return date.toLocaleDateString('en-US', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+    } catch (error) {
+        return dateString; // Return original if formatting fails
+    }
 }
 
 // Setup star rating functionality
 function setupStarRatings() {
+    console.log('Setting up star ratings...');
+    
     const starRatings = document.querySelectorAll('.star-rating');
     
     starRatings.forEach(rating => {
         const skill = rating.dataset.skill;
         const stars = rating.querySelectorAll('.star');
+        
+        if (!skill || stars.length === 0) {
+            console.warn('Star rating setup issue:', skill, stars.length);
+            return;
+        }
         
         // Set initial rating (3 stars)
         updateStarDisplay(stars, 3);
@@ -100,6 +130,7 @@ function setupStarRatings() {
                 const value = parseInt(star.dataset.value);
                 skillRatings[skill] = value;
                 updateStarDisplay(stars, value);
+                console.log('Skill rating updated:', skill, value);
             });
             
             // Hover effects
@@ -131,16 +162,23 @@ function updateStarHover(stars, rating) {
         star.classList.remove('active', 'hover');
         if (index < rating) {
             star.classList.add('hover');
-        } else if (index < skillRatings[stars[0].closest('.star-rating').dataset.skill]) {
-            star.classList.add('active');
         }
     });
 }
 
 // Setup form submission
 function setupForm() {
+    console.log('Setting up form...');
+    
+    const signupForm = document.getElementById('signup-form');
+    if (!signupForm) {
+        console.error('Signup form not found');
+        return;
+    }
+    
     signupForm.addEventListener('submit', async (e) => {
         e.preventDefault();
+        console.log('Form submitted');
         
         const submitButton = signupForm.querySelector('button[type="submit"]');
         const originalText = submitButton.textContent;
@@ -148,9 +186,6 @@ function setupForm() {
         // Disable button and show loading
         submitButton.disabled = true;
         submitButton.textContent = '⚽ Signing Up...';
-        
-        // Clear previous messages
-        messageDiv.innerHTML = '';
         
         // Get form data
         const formData = {
@@ -163,12 +198,7 @@ function setupForm() {
             defending: skillRatings.defending
         };
         
-        // Validate form
-        if (!validateForm(formData)) {
-            submitButton.disabled = false;
-            submitButton.textContent = originalText;
-            return;
-        }
+        console.log('Form data:', formData);
         
         try {
             const response = await fetch(`/api/signup/${gameId}`, {
@@ -180,23 +210,18 @@ function setupForm() {
             });
             
             const result = await response.json();
+            console.log('Signup response:', result);
             
             if (response.ok) {
                 showSuccess(result.message);
                 signupForm.style.display = 'none';
-                
-                // Update player count
-                const currentPlayersSpan = document.getElementById('current-players');
-                const currentCount = parseInt(currentPlayersSpan.textContent);
-                currentPlayersSpan.textContent = currentCount + 1;
-                
             } else {
                 showError(result.error || 'Signup failed. Please try again.');
                 submitButton.disabled = false;
                 submitButton.textContent = originalText;
             }
             
-        } catch (error) {
+                } catch (error) {
             console.error('Signup error:', error);
             showError('Network error. Please check your connection and try again.');
             submitButton.disabled = false;
@@ -205,119 +230,67 @@ function setupForm() {
     });
 }
 
-// Validate form data
-function validateForm(data) {
-    // Check required fields
-    if (!data.name) {
-        showError('Please enter your name');
-        document.getElementById('name').focus();
-        return false;
-    }
-    
-    if (data.name.length < 2) {
-        showError('Name must be at least 2 characters long');
-        document.getElementById('name').focus();
-        return false;
-    }
-    
-    if (!data.position) {
-        showError('Please select your preferred position');
-        document.getElementById('position').focus();
-        return false;
-    }
-    
-    if (!data.age || data.age < 16 || data.age > 60) {
-        showError('Please enter a valid age between 16 and 60');
-        document.getElementById('age').focus();
-        return false;
-    }
-    
-    // Validate skill ratings
-    const skills = ['speed', 'passing', 'shooting', 'defending'];
-    for (let skill of skills) {
-        if (!data[skill] || data[skill] < 1 || data[skill] > 5) {
-            showError(`Please rate your ${skill} skills (1-5 stars)`);
-            return false;
-        }
-    }
-    
-    return true;
-}
-
 // Show success message
 function showSuccess(message) {
-    messageDiv.innerHTML = `
-        <div class="success-message">
-            <h3>🎉 Success!</h3>
-            <p>${message}</p>
-            <p><strong>What's next?</strong></p>
-            <ul style="text-align: left; margin-top: 10px;">
-                <li>You'll receive payment details via email/text</li>
-                <li>Mark your calendar for the game</li>
-                <li>Bring your soccer gear and water</li>
-                <li>Have fun and play fair! ⚽</li>
-            </ul>
-        </div>
-    `;
-    messageDiv.scrollIntoView({ behavior: 'smooth' });
+    const messageDiv = document.getElementById('message');
+    if (messageDiv) {
+        messageDiv.innerHTML = `
+            <div class="success-message">
+                <h3>🎉 Success!</h3>
+                <p>${message}</p>
+                <p><strong>What's next?</strong></p>
+                <ul style="text-align: left; margin-top: 10px;">
+                    <li>You'll receive payment details via email/text</li>
+                    <li>Mark your calendar for the game</li>
+                    <li>Bring your soccer gear and water</li>
+                    <li>Have fun and play fair! ⚽</li>
+                </ul>
+            </div>
+        `;
+        messageDiv.scrollIntoView({ behavior: 'smooth' });
+    }
 }
 
 // Show error message
 function showError(message) {
-    messageDiv.innerHTML = `
-        <div class="error-message">
-            <h3>❌ Error</h3>
-            <p>${message}</p>
-        </div>
-    `;
-    messageDiv.scrollIntoView({ behavior: 'smooth' });
+    const messageDiv = document.getElementById('message');
+    if (messageDiv) {
+        messageDiv.innerHTML = `
+            <div class="error-message">
+                <h3>❌ Error</h3>
+                <p>${message}</p>
+            </div>
+        `;
+        messageDiv.scrollIntoView({ behavior: 'smooth' });
+    }
 }
 
-// Utility function to get skill rating summary
-function getSkillSummary() {
-    const total = skillRatings.speed + skillRatings.passing + skillRatings.shooting + skillRatings.defending;
-    const average = (total / 4).toFixed(1);
-    
-    let level = 'Beginner';
-    if (average >= 4) level = 'Advanced';
-    else if (average >= 3) level = 'Intermediate';
-    
-    return { average, level };
-}
-
-// Add some visual feedback for form interactions
+// Add form validation and enhancements
 function addFormEnhancements() {
-    // Add floating labels effect
-    const inputs = document.querySelectorAll('input, select');
-    inputs.forEach(input => {
-        input.addEventListener('focus', function() {
-            this.parentElement.classList.add('focused');
-        });
-        
-        input.addEventListener('blur', function() {
-            if (!this.value) {
-                this.parentElement.classList.remove('focused');
+    // Add real-time validation
+    const nameInput = document.getElementById('name');
+    const ageInput = document.getElementById('age');
+    
+    if (nameInput) {
+        nameInput.addEventListener('input', function() {
+            if (this.value.length >= 2) {
+                this.style.borderColor = '#28a745';
+            } else {
+                this.style.borderColor = '#ddd';
             }
         });
-    });
+    }
     
-    // Add real-time validation
-    document.getElementById('name').addEventListener('input', function() {
-        if (this.value.length >= 2) {
-            this.style.borderColor = '#28a745';
-        } else {
-            this.style.borderColor = '#ddd';
-        }
-    });
-    
-    document.getElementById('age').addEventListener('input', function() {
-        const age = parseInt(this.value);
-        if (age >= 16 && age <= 60) {
-            this.style.borderColor = '#28a745';
-        } else {
-            this.style.borderColor = '#dc3545';
-        }
-    });
+    if (ageInput) {
+        ageInput.addEventListener('input', function() {
+            const age = parseInt(this.value);
+            if (age >= 16 && age <= 60) {
+                this.style.borderColor = '#28a745';
+            } else {
+                this.style.borderColor = '#dc3545';
+            }
+        });
+    }
 }
 
 // Initialize form enhancements when page loads
@@ -357,52 +330,55 @@ document.addEventListener('keydown', function(e) {
 });
 
 // Make stars focusable for accessibility
-document.querySelectorAll('.star').forEach(star => {
-    star.setAttribute('tabindex', '0');
-    star.setAttribute('role', 'button');
-    star.setAttribute('aria-label', `Rate ${star.dataset.value} stars`);
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.star').forEach((star, index) => {
+        star.setAttribute('tabindex', '0');
+        star.setAttribute('role', 'button');
+        star.setAttribute('aria-label', `Rate ${star.dataset.value} stars`);
+    });
 });
 
-// Add loading animation
-function showLoadingAnimation() {
-    const loadingDiv = document.getElementById('loading');
-    let dots = 0;
-    const baseText = '⚽ Loading game details';
+// Debug function to check if all elements exist
+function debugElements() {
+    const requiredElements = [
+        'loading', 'game-info', 'game-full', 'signup-form', 'message',
+        'game-title', 'game-date', 'game-time', 'game-location', 
+        'game-cost', 'current-players', 'max-players',
+        'name', 'position', 'age'
+    ];
     
-    const interval = setInterval(() => {
-        dots = (dots + 1) % 4;
-        loadingDiv.textContent = baseText + '.'.repeat(dots);
-    }, 500);
-    
-    // Clear interval when loading is done
-    const observer = new MutationObserver(() => {
-        if (loadingDiv.style.display === 'none') {
-            clearInterval(interval);
-            observer.disconnect();
-        }
+    console.log('=== Element Debug Check ===');
+    requiredElements.forEach(id => {
+        const element = document.getElementById(id);
+        console.log(`${id}:`, element ? '✅ Found' : '❌ Missing');
     });
     
-    observer.observe(loadingDiv, { attributes: true });
-}
-
-// Start loading animation when page loads
-if (document.getElementById('loading').style.display !== 'none') {
-    showLoadingAnimation();
-}
-
-// Add smooth scroll to top after successful signup
-function scrollToTop() {
-    window.scrollTo({
-        top: 0,
-        behavior: 'smooth'
+    const starRatings = document.querySelectorAll('.star-rating');
+    console.log(`Star ratings found: ${starRatings.length}`);
+    
+    starRatings.forEach((rating, index) => {
+        const skill = rating.dataset.skill;
+        const stars = rating.querySelectorAll('.star');
+        console.log(`Star rating ${index + 1}: skill="${skill}", stars=${stars.length}`);
     });
 }
 
 // Export functions for testing (if needed)
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
-        validateForm,
         formatDate,
-        getSkillSummary
+        skillRatings,
+        debugElements
     };
 }
+
+// Add debug info to console
+console.log('🚀 Signup.js loaded successfully');
+console.log('Game ID from URL:', gameId);
+
+// Run debug check after page loads
+document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(() => {
+        debugElements();
+    }, 1000);
+});
