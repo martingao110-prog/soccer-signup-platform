@@ -37,8 +37,7 @@ db.serialize(() => {
   )`);
 });
 
-// Routes
-// Routes
+// Page Routes
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
@@ -51,30 +50,15 @@ app.get('/admin', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'admin.html'));
 });
 
-// Add this route with your other routes
 app.get('/signups/:gameId', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'signups.html'));
 });
 
-
-// Add this with your other routes (around line 40-50)
-app.get('/signups/:gameId', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'signups.html'));
-});
-
-// Handle 404 for missing files
-app.use((req, res) => {
-  res.status(404).send(`
-    <h1>404 - Page Not Found</h1>
-    <p>Go to <a href="/admin">Admin Panel</a> to create games</p>
-  `);
-});
-
-// Get game details
+// API Routes
 app.get('/api/games/:id', (req, res) => {
-  db.get(`SELECT g.*, COUNT(s.id) as current_players 
-          FROM games g 
-          LEFT JOIN signups s ON g.id = s.game_id 
+  db.get(`SELECT g.*, COUNT(s.id) as current_players
+          FROM games g
+          LEFT JOIN signups s ON g.id = s.game_id
           WHERE g.id = ?`, [req.params.id], (err, row) => {
     if (err || !row) {
       res.status(404).json({ error: 'Game not found' });
@@ -84,15 +68,14 @@ app.get('/api/games/:id', (req, res) => {
   });
 });
 
-// Submit signup
 app.post('/api/signup/:gameId', (req, res) => {
   const gameId = req.params.gameId;
   const { name, position, age, speed, passing, shooting, defending } = req.body;
   
   // Check if game exists and has space
   db.get(`SELECT g.max_players, COUNT(s.id) as current_players
-          FROM games g 
-          LEFT JOIN signups s ON g.id = s.game_id 
+          FROM games g
+          LEFT JOIN signups s ON g.id = s.game_id
           WHERE g.id = ?`, [gameId], (err, game) => {
     
     if (err || !game) {
@@ -106,7 +89,7 @@ app.post('/api/signup/:gameId', (req, res) => {
     }
     
     // Add signup
-    db.run(`INSERT INTO signups (game_id, name, position, age, speed, passing, shooting, defending) 
+    db.run(`INSERT INTO signups (game_id, name, position, age, speed, passing, shooting, defending)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
            [gameId, name, position, age, speed, passing, shooting, defending],
            function(err) {
@@ -114,10 +97,10 @@ app.post('/api/signup/:gameId', (req, res) => {
         res.status(500).json({ error: 'Signup failed' });
         return;
       }
-      res.json({ 
-        success: true, 
+      res.json({
+        success: true,
         message: 'Successfully signed up!',
-        signupId: this.lastID 
+        signupId: this.lastID
       });
     });
   });
@@ -125,20 +108,20 @@ app.post('/api/signup/:gameId', (req, res) => {
 
 // Admin endpoints
 app.get('/api/admin/games', (req, res) => {
-  db.all(`SELECT g.*, COUNT(s.id) as signups 
-          FROM games g 
-          LEFT JOIN signups s ON g.id = s.game_id 
-          GROUP BY g.id 
+  db.all(`SELECT g.*, COUNT(s.id) as signups
+          FROM games g
+          LEFT JOIN signups s ON g.id = s.game_id
+          GROUP BY g.id
           ORDER BY g.date, g.time`, (err, rows) => {
     res.json(rows || []);
   });
 });
 
 app.get('/api/admin/games/:id/signups', (req, res) => {
-  db.all(`SELECT s.*, 
+  db.all(`SELECT s.*,
           (s.speed + s.passing + s.shooting + s.defending) / 4.0 as avg_skill
-          FROM signups s 
-          WHERE s.game_id = ? 
+          FROM signups s
+          WHERE s.game_id = ?
           ORDER BY s.signup_time`, [req.params.id], (err, rows) => {
     res.json(rows || []);
   });
@@ -147,9 +130,9 @@ app.get('/api/admin/games/:id/signups', (req, res) => {
 app.post('/api/admin/games', (req, res) => {
   const { title, date, time, location, cost, max_players } = req.body;
   
-  db.run(`INSERT INTO games (title, date, time, location, cost, max_players) 
-          VALUES (?, ?, ?, ?, ?, ?)`, 
-         [title, date, time, location, cost, max_players], 
+  db.run(`INSERT INTO games (title, date, time, location, cost, max_players)
+          VALUES (?, ?, ?, ?, ?, ?)`,
+         [title, date, time, location, cost, max_players],
          function(err) {
     if (err) {
       res.status(500).json({ error: err.message });
@@ -169,6 +152,14 @@ app.put('/api/admin/signups/:id/payment', (req, res) => {
     }
     res.json({ success: true });
   });
+});
+
+// Handle 404 for missing files (this should be LAST)
+app.use((req, res) => {
+  res.status(404).send(`
+    <h1>404 - Page Not Found</h1>
+    <p>Go to <a href="/admin">Admin Panel</a> to create games</p>
+  `);
 });
 
 const PORT = process.env.PORT || 3000;
