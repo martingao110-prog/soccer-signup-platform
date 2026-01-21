@@ -1,8 +1,6 @@
-// Get game ID from URL
 const gameId = window.location.pathname.split('/')[2];
 console.log('Game ID:', gameId);
 
-// Skill ratings storage
 const skillRatings = {
     speed: 3,
     passing: 3,
@@ -10,7 +8,6 @@ const skillRatings = {
     defending: 3
 };
 
-// Initialize page
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Page loaded, initializing...');
     loadGameDetails();
@@ -18,7 +15,6 @@ document.addEventListener('DOMContentLoaded', function() {
     setupForm();
 });
 
-// Load game details from API
 async function loadGameDetails() {
     console.log('Loading game details for ID:', gameId);
     
@@ -45,7 +41,6 @@ async function loadGameDetails() {
     }
 }
 
-// Display game information
 function displayGameDetails(game) {
     console.log('Displaying game details:', game);
     
@@ -60,16 +55,13 @@ function displayGameDetails(game) {
     
     loadingDiv.style.display = 'none';
     
-    // Check if game is full
     if (game.current_players >= game.max_players) {
         if (gameFullDiv) gameFullDiv.style.display = 'block';
         return;
     }
     
-    // Show game info
     gameInfoDiv.style.display = 'block';
     
-    // Populate game details
     const elements = {
         'game-title': game.title,
         'game-date': formatDate(game.date),
@@ -90,7 +82,6 @@ function displayGameDetails(game) {
     }
 }
 
-// Format date for display
 function formatDate(dateString) {
     try {
         const date = new Date(dateString);
@@ -101,11 +92,10 @@ function formatDate(dateString) {
             day: 'numeric'
         });
     } catch (error) {
-        return dateString; // Return original if formatting fails
+        return dateString;
     }
 }
 
-// Setup star rating functionality
 function setupStarRatings() {
     console.log('Setting up star ratings...');
     
@@ -120,12 +110,10 @@ function setupStarRatings() {
             return;
         }
         
-        // Set initial rating (3 stars)
         updateStarDisplay(stars, 3);
         skillRatings[skill] = 3;
         
         stars.forEach((star, index) => {
-            // Click event
             star.addEventListener('click', () => {
                 const value = parseInt(star.dataset.value);
                 skillRatings[skill] = value;
@@ -133,7 +121,6 @@ function setupStarRatings() {
                 console.log('Skill rating updated:', skill, value);
             });
             
-            // Hover effects
             star.addEventListener('mouseenter', () => {
                 const value = parseInt(star.dataset.value);
                 updateStarHover(stars, value);
@@ -146,7 +133,6 @@ function setupStarRatings() {
     });
 }
 
-// Update star display
 function updateStarDisplay(stars, rating) {
     stars.forEach((star, index) => {
         star.classList.remove('active', 'hover');
@@ -156,7 +142,6 @@ function updateStarDisplay(stars, rating) {
     });
 }
 
-// Update star hover effect
 function updateStarHover(stars, rating) {
     stars.forEach((star, index) => {
         star.classList.remove('active', 'hover');
@@ -166,7 +151,6 @@ function updateStarHover(stars, rating) {
     });
 }
 
-// Setup form submission
 function setupForm() {
     console.log('Setting up form...');
     
@@ -183,11 +167,9 @@ function setupForm() {
         const submitButton = signupForm.querySelector('button[type="submit"]');
         const originalText = submitButton.textContent;
         
-        // Disable button and show loading
         submitButton.disabled = true;
         submitButton.textContent = '⚽ Signing Up...';
         
-        // Get form data
         const formData = {
             name: document.getElementById('name').value.trim(),
             position: document.getElementById('position').value,
@@ -221,7 +203,7 @@ function setupForm() {
                 submitButton.textContent = originalText;
             }
             
-                } catch (error) {
+        } catch (error) {
             console.error('Signup error:', error);
             showError('Network error. Please check your connection and try again.');
             submitButton.disabled = false;
@@ -230,7 +212,6 @@ function setupForm() {
     });
 }
 
-// Show success message
 function showSuccess(message) {
     const messageDiv = document.getElementById('message');
     if (messageDiv) {
@@ -240,7 +221,7 @@ function showSuccess(message) {
                 <p>${message}</p>
                 <p><strong>What's next?</strong></p>
                 <ul style="text-align: left; margin-top: 10px;">
-                    <li>You'll receive payment details via email/text</li>
+                    <li>You'll receive payment details</li>
                     <li>Mark your calendar for the game</li>
                     <li>Bring your soccer gear and water</li>
                     <li>Have fun and play fair! ⚽</li>
@@ -251,7 +232,6 @@ function showSuccess(message) {
     }
 }
 
-// Show error message
 function showError(message) {
     const messageDiv = document.getElementById('message');
     if (messageDiv) {
@@ -265,120 +245,4 @@ function showError(message) {
     }
 }
 
-// Add form validation and enhancements
-function addFormEnhancements() {
-    // Add real-time validation
-    const nameInput = document.getElementById('name');
-    const ageInput = document.getElementById('age');
-    
-    if (nameInput) {
-        nameInput.addEventListener('input', function() {
-            if (this.value.length >= 2) {
-                this.style.borderColor = '#28a745';
-            } else {
-                this.style.borderColor = '#ddd';
-            }
-        });
-    }
-    
-    if (ageInput) {
-        ageInput.addEventListener('input', function() {
-            const age = parseInt(this.value);
-            if (age >= 16 && age <= 60) {
-                this.style.borderColor = '#28a745';
-            } else {
-                this.style.borderColor = '#dc3545';
-            }
-        });
-    }
-}
-
-// Initialize form enhancements when page loads
-document.addEventListener('DOMContentLoaded', function() {
-    addFormEnhancements();
-});
-
-// Add keyboard navigation for stars
-document.addEventListener('keydown', function(e) {
-    if (e.target.classList.contains('star')) {
-        const starRating = e.target.closest('.star-rating');
-        const stars = starRating.querySelectorAll('.star');
-        const currentIndex = Array.from(stars).indexOf(e.target);
-        
-        let newIndex = currentIndex;
-        
-        switch(e.key) {
-            case 'ArrowLeft':
-                e.preventDefault();
-                newIndex = Math.max(0, currentIndex - 1);
-                break;
-            case 'ArrowRight':
-                e.preventDefault();
-                newIndex = Math.min(stars.length - 1, currentIndex + 1);
-                break;
-            case 'Enter':
-            case ' ':
-                e.preventDefault();
-                e.target.click();
-                return;
-        }
-        
-        if (newIndex !== currentIndex) {
-            stars[newIndex].focus();
-        }
-    }
-});
-
-// Make stars focusable for accessibility
-document.addEventListener('DOMContentLoaded', function() {
-    document.querySelectorAll('.star').forEach((star, index) => {
-        star.setAttribute('tabindex', '0');
-        star.setAttribute('role', 'button');
-        star.setAttribute('aria-label', `Rate ${star.dataset.value} stars`);
-    });
-});
-
-// Debug function to check if all elements exist
-function debugElements() {
-    const requiredElements = [
-        'loading', 'game-info', 'game-full', 'signup-form', 'message',
-        'game-title', 'game-date', 'game-time', 'game-location', 
-        'game-cost', 'current-players', 'max-players',
-        'name', 'position', 'age'
-    ];
-    
-    console.log('=== Element Debug Check ===');
-    requiredElements.forEach(id => {
-        const element = document.getElementById(id);
-        console.log(`${id}:`, element ? '✅ Found' : '❌ Missing');
-    });
-    
-    const starRatings = document.querySelectorAll('.star-rating');
-    console.log(`Star ratings found: ${starRatings.length}`);
-    
-    starRatings.forEach((rating, index) => {
-        const skill = rating.dataset.skill;
-        const stars = rating.querySelectorAll('.star');
-        console.log(`Star rating ${index + 1}: skill="${skill}", stars=${stars.length}`);
-    });
-}
-
-// Export functions for testing (if needed)
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = {
-        formatDate,
-        skillRatings,
-        debugElements
-    };
-}
-
-// Add debug info to console
 console.log('🚀 Signup.js loaded successfully');
-console.log('Game ID from URL:', gameId);
-
-// Run debug check after page loads
-document.addEventListener('DOMContentLoaded', function() {
-    setTimeout(() => {
-        debugElements();
-    }, 1000);
-});
