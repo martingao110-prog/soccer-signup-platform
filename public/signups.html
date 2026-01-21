@@ -3,401 +3,110 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Game Signup Sheet</title>
+    <title>Soccer Game Signup</title>
     <link rel="stylesheet" href="style.css">
-    <style>
-        .signup-sheet {
-            background: white;
-            max-width: 1000px;
-            margin: 20px auto;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-        }
-        
-        .game-header {
-            text-align: center;
-            border-bottom: 3px solid #28a745;
-            padding-bottom: 20px;
-            margin-bottom: 30px;
-        }
-        
-        .game-info {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            margin-bottom: 30px;
-            background: #f8f9fa;
-            padding: 20px;
-            border-radius: 8px;
-        }
-        
-        .info-item {
-            text-align: center;
-        }
-        
-        .info-label {
-            font-weight: bold;
-            color: #666;
-            font-size: 0.9rem;
-            text-transform: uppercase;
-        }
-        
-        .info-value {
-            font-size: 1.2rem;
-            color: #333;
-            margin-top: 5px;
-        }
-        
-        .signups-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 20px 0;
-            font-size: 14px;
-        }
-        
-        .signups-table th {
-            background: #28a745;
-            color: white;
-            padding: 12px 8px;
-            text-align: left;
-            font-weight: bold;
-        }
-        
-        .signups-table td {
-            padding: 10px 8px;
-            border-bottom: 1px solid #ddd;
-        }
-        
-        .signups-table tr:nth-child(even) {
-            background: #f9f9f9;
-        }
-        
-        .signups-table tr:hover {
-            background: #f0f8f0;
-        }
-        
-        .skill-stars {
-            font-size: 12px;
-        }
-        
-        .skill-avg {
-            font-weight: bold;
-            color: #28a745;
-        }
-        
-        .position-badge {
-            display: inline-block;
-            padding: 3px 8px;
-            border-radius: 12px;
-            font-size: 11px;
-            font-weight: bold;
-            text-transform: uppercase;
-        }
-        
-        .pos-gk { background: #ff6b6b; color: white; }
-        .pos-def { background: #4ecdc4; color: white; }
-        .pos-mid { background: #45b7d1; color: white; }
-        .pos-fwd { background: #f9ca24; color: black; }
-        .pos-any { background: #6c5ce7; color: white; }
-        
-        .payment-status {
-            text-align: center;
-        }
-        
-        .paid { color: #28a745; font-weight: bold; }
-        .unpaid { color: #dc3545; font-weight: bold; }
-        
-        .summary-stats {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 15px;
-            margin: 30px 0;
-        }
-        
-        .stat-card {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 15px;
-            border-radius: 8px;
-            text-align: center;
-        }
-        
-        .stat-number {
-            font-size: 2rem;
-            font-weight: bold;
-            display: block;
-        }
-        
-        .stat-label {
-            font-size: 0.9rem;
-            opacity: 0.9;
-        }
-        
-        .print-btn {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: #28a745;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-weight: bold;
-        }
-        
-        @media print {
-            body { background: white; }
-            .print-btn { display: none; }
-            .signup-sheet { box-shadow: none; margin: 0; }
-        }
-        
-        @media (max-width: 768px) {
-            .signups-table { font-size: 12px; }
-            .signups-table th,
-            .signups-table td { padding: 6px 4px; }
-        }
-    </style>
 </head>
 <body>
-    <button class="print-btn" onclick="window.print()">🖨️ Print Sheet</button>
-    
-    <div class="signup-sheet">
-        <div id="loading" style="text-align: center; padding: 40px;">
-            ⚽ Loading signup sheet...
-        </div>
-        
-        <div id="content" style="display: none;">
-            <div class="game-header">
-                <h1 id="game-title">Game Signup Sheet</h1>
-                <p id="game-subtitle" style="color: #666; margin-top: 10px;"></p>
+    <div class="container">
+        <div class="signup-card">
+            <div id="loading">⚽ Loading game details...</div>
+            
+            <div id="game-info" style="display: none;">
+                <h1>⚽ <span id="game-title"></span></h1>
+                <div class="game-details">
+                    <p><strong>📅 Date:</strong> <span id="game-date"></span></p>
+                    <p><strong>🕐 Time:</strong> <span id="game-time"></span></p>
+                    <p><strong>📍 Location:</strong> <span id="game-location"></span></p>
+                    <p><strong>💰 Cost:</strong> $<span id="game-cost"></span></p>
+                    <p><strong>👥 Players:</strong> <span id="current-players"></span>/<span id="max-players"></span></p>
+                </div>
+
+                <form id="signup-form">
+                    <h2>Sign Up Now!</h2>
+                    
+                    <div class="form-group">
+                        <label for="name">Your Name:</label>
+                        <input type="text" id="name" required placeholder="Enter your full name">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="position">Preferred Position:</label>
+                        <select id="position" required>
+                            <option value="">Choose your position</option>
+                            <option value="Goalkeeper">🥅 Goalkeeper</option>
+                            <option value="Defender">🛡️ Defender</option>
+                            <option value="Midfielder">⚡ Midfielder</option>
+                            <option value="Forward">🎯 Forward</option>
+                            <option value="Any">🔄 Any Position</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="age">Age:</label>
+                        <input type="number" id="age" min="16" max="60" required placeholder="Your age">
+                    </div>
+
+                    <div class="skills-section">
+                        <h3>Rate Your Skills (1-5 stars)</h3>
+                        
+                        <div class="skill-group">
+                            <label>Speed:</label>
+                            <div class="star-rating" data-skill="speed">
+                                <span class="star" data-value="1">⭐</span>
+                                <span class="star" data-value="2">⭐</span>
+                                <span class="star" data-value="3">⭐</span>
+                                <span class="star" data-value="4">⭐</span>
+                                <span class="star" data-value="5">⭐</span>
+                            </div>
+                        </div>
+
+                        <div class="skill-group">
+                            <label>Passing:</label>
+                            <div class="star-rating" data-skill="passing">
+                                <span class="star" data-value="1">⭐</span>
+                                <span class="star" data-value="2">⭐</span>
+                                <span class="star" data-value="3">⭐</span>
+                                <span class="star" data-value="4">⭐</span>
+                                <span class="star" data-value="5">⭐</span>
+                            </div>
+                        </div>
+
+                        <div class="skill-group">
+                            <label>Shooting:</label>
+                            <div class="star-rating" data-skill="shooting">
+                                <span class="star" data-value="1">⭐</span>
+                                <span class="star" data-value="2">⭐</span>
+                                <span class="star" data-value="3">⭐</span>
+                                <span class="star" data-value="4">⭐</span>
+                                <span class="star" data-value="5">⭐</span>
+                            </div>
+                        </div>
+
+                        <div class="skill-group">
+                            <label>Defending:</label>
+                            <div class="star-rating" data-skill="defending">
+                                <span class="star" data-value="1">⭐</span>
+                                <span class="star" data-value="2">⭐</span>
+                                <span class="star" data-value="3">⭐</span>
+                                <span class="star" data-value="4">⭐</span>
+                                <span class="star" data-value="5">⭐</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="submit">⚽ Sign Me Up!</button>
+                </form>
+
+                <div id="message"></div>
             </div>
-            
-            <div class="game-info">
-                <div class="info-item">
-                    <div class="info-label">Date</div>
-                    <div class="info-value" id="game-date"></div>
-                </div>
-                <div class="info-item">
-                    <div class="info-label">Time</div>
-                    <div class="info-value" id="game-time"></div>
-                </div>
-                <div class="info-item">
-                    <div class="info-label">Location</div>
-                    <div class="info-value" id="game-location"></div>
-                </div>
-                <div class="info-item">
-                    <div class="info-label">Cost</div>
-                    <div class="info-value">$<span id="game-cost"></span></div>
-                </div>
-                <div class="info-item">
-                    <div class="info-label">Capacity</div>
-                    <div class="info-value"><span id="current-players"></span>/<span id="max-players"></span></div>
-                </div>
-            </div>
-            
-            <div class="summary-stats" id="stats-container">
-                <!-- Stats will be populated here -->
-            </div>
-            
-            <table class="signups-table">
-                <thead>
-                    <tr>
-                        <th>#</th>
-                        <th>Name</th>
-                        <th>Position</th>
-                        <th>Age</th>
-                        <th>Skills</th>
-                        <th>Avg</th>
-                        <th>Payment</th>
-                        <th>Signed Up</th>
-                    </tr>
-                </thead>
-                <tbody id="signups-tbody">
-                    <!-- Signups will be populated here -->
-                </tbody>
-            </table>
-            
-            <div id="no
-                          <div id="no-signups" style="display: none; text-align: center; padding: 40px; color: #666;">
-                <h3>No signups yet</h3>
-                <p>Share the signup link to get players registered!</p>
+
+            <div id="game-full" style="display: none;">
+                <h2>😔 Game is Full</h2>
+                <p>Sorry, this game has reached maximum capacity.</p>
             </div>
         </div>
     </div>
 
-    <script>
-        // Get game ID from URL
-        const gameId = window.location.pathname.split('/')[3];
-
-        // Load data when page loads
-        document.addEventListener('DOMContentLoaded', function() {
-            loadGameAndSignups();
-        });
-
-        async function loadGameAndSignups() {
-            try {
-                // Load game details and signups in parallel
-                const [gameResponse, signupsResponse] = await Promise.all([
-                    fetch(`/api/games/${gameId}`),
-                    fetch(`/api/admin/games/${gameId}/signups`)
-                ]);
-
-                if (!gameResponse.ok) {
-                    throw new Error('Game not found');
-                }
-
-                const game = await gameResponse.json();
-                const signups = await signupsResponse.json();
-
-                displayGameDetails(game);
-                displaySignups(signups);
-                displayStats(signups, game);
-
-                document.getElementById('loading').style.display = 'none';
-                document.getElementById('content').style.display = 'block';
-
-            } catch (error) {
-                console.error('Error loading data:', error);
-                document.getElementById('loading').innerHTML = `
-                    <h3>❌ Error Loading Signup Sheet</h3>
-                    <p>Game not found or unable to load data.</p>
-                    <a href="/admin">← Back to Admin Panel</a>
-                `;
-            }
-        }
-
-        function displayGameDetails(game) {
-            document.getElementById('game-title').textContent = game.title;
-            document.getElementById('game-subtitle').textContent = `Signup Sheet - Generated ${new Date().toLocaleDateString()}`;
-            document.getElementById('game-date').textContent = formatDate(game.date);
-            document.getElementById('game-time').textContent = game.time;
-            document.getElementById('game-location').textContent = game.location;
-            document.getElementById('game-cost').textContent = game.cost.toFixed(2);
-            document.getElementById('current-players').textContent = game.current_players || 0;
-            document.getElementById('max-players').textContent = game.max_players;
-        }
-
-        function displaySignups(signups) {
-            const tbody = document.getElementById('signups-tbody');
-            const noSignupsDiv = document.getElementById('no-signups');
-
-            if (signups.length === 0) {
-                tbody.innerHTML = '';
-                noSignupsDiv.style.display = 'block';
-                return;
-            }
-
-            tbody.innerHTML = signups.map((signup, index) => `
-                <tr>
-                    <td><strong>${index + 1}</strong></td>
-                    <td><strong>${signup.name}</strong></td>
-                    <td>
-                        <span class="position-badge pos-${getPositionClass(signup.position)}">
-                            ${signup.position}
-                        </span>
-                    </td>
-                    <td>${signup.age}</td>
-                    <td class="skill-stars">
-                        <div>Speed: ${'⭐'.repeat(signup.speed)}</div>
-                        <div>Pass: ${'⭐'.repeat(signup.passing)}</div>
-                        <div>Shot: ${'⭐'.repeat(signup.shooting)}</div>
-                        <div>Def: ${'⭐'.repeat(signup.defending)}</div>
-                    </td>
-                    <td class="skill-avg">${signup.avg_skill.toFixed(1)}</td>
-                    <td class="payment-status">
-                        <span class="${signup.paid ? 'paid' : 'unpaid'}">
-                            ${signup.paid ? '✅ Paid' : '❌ Unpaid'}
-                        </span>
-                    </td>
-                    <td>${formatDateTime(signup.signup_time)}</td>
-                </tr>
-            `).join('');
-        }
-
-        function displayStats(signups, game) {
-            const statsContainer = document.getElementById('stats-container');
-            
-            if (signups.length === 0) {
-                statsContainer.innerHTML = '';
-                return;
-            }
-
-            // Calculate stats
-            const totalSignups = signups.length;
-            const paidCount = signups.filter(s => s.paid).length;
-            const unpaidCount = totalSignups - paidCount;
-            const avgAge = (signups.reduce((sum, s) => sum + s.age, 0) / totalSignups).toFixed(1);
-            const avgSkill = (signups.reduce((sum, s) => sum + s.avg_skill, 0) / totalSignups).toFixed(1);
-            
-            // Position breakdown
-            const positions = signups.reduce((acc, s) => {
-                acc[s.position] = (acc[s.position] || 0) + 1;
-                return acc;
-            }, {});
-
-            const positionBreakdown = Object.entries(positions)
-                .map(([pos, count]) => `${pos}: ${count}`)
-                .join(', ');
-
-            statsContainer.innerHTML = `
-                <div class="stat-card">
-                    <span class="stat-number">${totalSignups}</span>
-                    <div class="stat-label">Total Players</div>
-                </div>
-                <div class="stat-card">
-                    <span class="stat-number">${paidCount}</span>
-                    <div class="stat-label">Paid</div>
-                </div>
-                <div class="stat-card">
-                    <span class="stat-number">${unpaidCount}</span>
-                    <div class="stat-label">Unpaid</div>
-                </div>
-                <div class="stat-card">
-                    <span class="stat-number">${avgAge}</span>
-                    <div class="stat-label">Avg Age</div>
-                </div>
-                <div class="stat-card">
-                    <span class="stat-number">${avgSkill}</span>
-                    <div class="stat-label">Avg Skill</div>
-                </div>
-                <div class="stat-card" style="grid-column: 1 / -1;">
-                    <div class="stat-label">Positions: ${positionBreakdown}</div>
-                </div>
-            `;
-        }
-
-        function getPositionClass(position) {
-            const posMap = {
-                'Goalkeeper': 'gk',
-                'Defender': 'def', 
-                'Midfielder': 'mid',
-                'Forward': 'fwd',
-                'Any': 'any'
-            };
-            return posMap[position] || 'any';
-        }
-
-        function formatDate(dateString) {
-            const date = new Date(dateString);
-            return date.toLocaleDateString('en-US', {
-                weekday: 'long',
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric'
-            });
-        }
-
-        function formatDateTime(dateTimeString) {
-            const date = new Date(dateTimeString);
-            return date.toLocaleDateString('en-US', {
-                month: 'short',
-                day: 'numeric',
-                hour: 'numeric',
-                minute: '2-digit'
-            });
-        }
-    </script>
+    <script src="signup.js"></script>
 </body>
 </html>
