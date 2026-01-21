@@ -123,9 +123,15 @@
                                 ${window.location.origin}/signup/${game.id}
                             </a>
                         </p>
-                        <button onclick="loadSignups(${game.id})" style="margin-top: 10px;">
-                            View Signups
-                        </button>
+                        <div style="margin-top: 15px;">
+                            <button onclick="loadSignups(${game.id})" style="margin-right: 10px;">
+                                👥 View Signups
+                            </button>
+                            <a href="/signups/${game.id}" target="_blank" 
+                               style="display: inline-block; background: #007bff; color: white; padding: 8px 15px; text-decoration: none; border-radius: 5px;">
+                                📋 Signup Sheet
+                            </a>
+                        </div>
                         <div id="signups-${game.id}" style="margin-top: 10px;"></div>
                     </div>
                 `).join('');
