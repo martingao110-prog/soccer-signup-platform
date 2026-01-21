@@ -1,5 +1,6 @@
 const gameId = window.location.pathname.split('/')[2];
 console.log('Game ID:', gameId);
+// ... rest of client code
 
 const skillRatings = {
     speed: 3,
