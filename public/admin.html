@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Soccer Admin Panel</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .admin-container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        .admin-header { background: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; }
+        .create-game-form { background: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; }
+        .games-list { background: white; padding: 20px; border-radius: 10px; }
+        .game-item { border-bottom: 1px solid #eee; padding: 15px 0; }
+        .signup-link { background: #007bff; color: white; padding: 5px 10px; border-radius: 5px; text-decoration: none; }
+    </style>
+</head>
+<body>
+    <div class="admin-container">
+        <div class="admin-header">
+            <h1>⚽ Soccer Admin Panel</h1>
+            <p>Create games and manage signups</p>
+        </div>
+
+        <div class="create-game-form">
+            <h2>Create New Game</h2>
+            <form id="create-game-form">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div>
+                        <label>Game Title:</label>
+                        <input type="text" id="title" required placeholder="Sunday Pickup Game">
+                    </div>
+                    <div>
+                        <label>Date:</label>
+                        <input type="date" id="date" required>
+                    </div>
+                    <div>
+                        <label>Time:</label>
+                        <input type="time" id="time" required>
+                    </div>
+                    <div>
+                        <label>Max Players:</label>
+                        <input type="number" id="max_players" required min="6" max="50" value="20">
+                    </div>
+                    <div>
+                        <label>Location:</label>
+                        <input type="text" id="location" required placeholder="Central Park Field">
+                    </div>
+                    <div>
+                        <label>Cost ($):</label>
+                        <input type="number" id="cost" required min="0" step="0.01" value="15.00">
+                    </div>
+                </div>
+                <button type="submit" style="margin-top: 15px;">Create Game</button>
+            </form>
+        </div>
+
+        <div class="games-list">
+            <h2>Games & Signups</h2>
+            <div id="games-container">Loading games...</div>
+        </div>
+    </div>
+
+    <script>
+        // Load games on page load
+        document.addEventListener('DOMContentLoaded', loadGames);
+
+        // Create game form
+        document.getElementById('create-game-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = {
+                title: document.getElementById('title').value,
+                date: document.getElementById('date').value,
+                time: document.getElementById('time').value,
+                location: document.getElementById('location').value,
+                cost: parseFloat(document.getElementById('cost').value),
+                max_players: parseInt(document.getElementById('max_players').value)
+            };
+
+            try {
+                const response = await fetch('/api/admin/games', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(formData)
+                });
+
+                const result = await response.json();
+                
+                if (response.ok) {
+                    alert(`Game created! Signup URL: ${window.location.origin}/signup/${result.id}`);
+                    document.getElementById('create-game-form').reset();
+                    loadGames();
+                } else {
+                    alert('Error creating game: ' + result.error);
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        });
+
+        // Load and display games
+        async function loadGames() {
+            try {
+                const response = await fetch('/api/admin/games');
+                const games = await response.json();
+                
+                const container = document.getElementById('games-container');
+                
+                if (games.length === 0) {
+                    container.innerHTML = '<p>No games created yet.</p>';
+                    return;
+                }
+
+                container.innerHTML = games.map(game => `
+                    <div class="game-item">
+                        <h3>${game.title}</h3>
+                        <p><strong>Date:</strong> ${game.date} at ${game.time}</p>
+                        <p><strong>Location:</strong> ${game.location}</p>
+                        <p><strong>Cost:</strong> $${game.cost}</p>
+                        <p><strong>Players:</strong> ${game.signups || 0}/${game.max_players}</p>
+                        <p><strong>Signup Link:</strong> 
+                            <a href="/signup/${game.id}" class="signup-link" target="_blank">
+                                ${window.location.origin}/signup/${game.id}
+                            </a>
+                        </p>
+                        <button onclick="loadSignups(${game.id})" style="margin-top: 10px;">
+                            View Signups
+                        </button>
+                        <div id="signups-${game.id}" style="margin-top: 10px;"></div>
+                    </div>
+                `).join('');
+            } catch (error) {
+                document.getElementById('games-container').innerHTML = 'Error loading games';
+            }
+        }
+
+        // Load signups for a game
+        async function loadSignups(gameId) {
+            try {
+                const response = await fetch(`/api/admin/games/${gameId}/signups`);
+                const signups = await response.json();
+                
+                const container = document.getElementById(`signups-${gameId}`);
+                
+                if (signups.length === 0) {
+                    container.innerHTML = '<p><em>No signups yet</em></p>';
+                    return;
+                }
+
+                container.innerHTML = `
+                    <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+                        <thead>
+                            <tr style="background: #f8f9fa;">
+                                <th style="padding: 8px; border: 1px solid #ddd;">Name</th>
+                                <th style="padding: 8px; border: 1px solid #ddd;">Position</th>
+                                <th style="padding: 8px; border: 1px solid #ddd;">Age</th>
+                                <th style="padding: 8px; border: 1px solid #ddd;">Skills</th>
+                                <th style="padding: 8px; border: 1px solid #ddd;">Paid</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${signups.map(signup => `
+                                <tr>
+                                    <td style="padding:
+                                                                    <tr>
+                                    <td style="padding: 8px; border: 1px solid #ddd;">${signup.name}</td>
+                                    <td style="padding: 8px; border: 1px solid #ddd;">${signup.position}</td>
+                                    <td style="padding: 8px; border: 1px solid #ddd;">${signup.age}</td>
+                                    <td style="padding: 8px; border: 1px solid #ddd;">
+                                        Speed:${signup.speed} | Pass:${signup.passing} | 
+                                        Shoot:${signup.shooting} | Def:${signup.defending}
+                                        <br><small>Avg: ${signup.avg_skill.toFixed(1)}</small>
+                                    </td>
+                                    <td style="padding: 8px; border: 1px solid #ddd;">
+                                        <input type="checkbox" ${signup.paid ? 'checked' : ''} 
+                                               onchange="updatePayment(${signup.id}, this.checked)">
+                                        ${signup.paid ? '✅ Paid' : '❌ Unpaid'}
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+            } catch (error) {
+                document.getElementById(`signups-${gameId}`).innerHTML = 'Error loading signups';
+            }
+        }
+
+        // Update payment status
+        async function updatePayment(signupId, paid) {
+            try {
+                const response = await fetch(`/api/admin/signups/${signupId}/payment`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ paid })
+                });
+
+                if (response.ok) {
+                    // Refresh the current view
+                    loadGames();
+                } else {
+                    alert('Error updating payment status');
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+    </script>
+</body>
+</html>
