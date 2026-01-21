@@ -1,252 +1,258 @@
 const express = require('express');
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
+const app = express();
 
-const gameId = window.location.pathname.split('/')[2];
-console.log('Game ID:', gameId);
+app.use(express.json());
+app.use(express.static('public'));
+app.use(express.urlencoded({ extended: true }));
 
-const skillRatings = {
-    speed: 3,
-    passing: 3,
-    shooting: 3,
-    defending: 3
-};
+const db = new sqlite3.Database('soccer.db');
 
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('Page loaded, initializing...');
-    loadGameDetails();
-    setupStarRatings();
-    setupForm();
+db.serialize(() => {
+  db.run(`CREATE TABLE IF NOT EXISTS games (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL,
+    date TEXT NOT NULL,
+    time TEXT NOT NULL,
+    location TEXT NOT NULL,
+    cost REAL NOT NULL,
+    max_players INTEGER NOT NULL
+  )`);
+
+  db.run(`CREATE TABLE IF NOT EXISTS signups (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    game_id INTEGER,
+    name TEXT NOT NULL,
+    position TEXT NOT NULL,
+    age INTEGER NOT NULL,
+    speed INTEGER NOT NULL,
+    passing INTEGER NOT NULL,
+    shooting INTEGER NOT NULL,
+    defending INTEGER NOT NULL,
+    paid BOOLEAN DEFAULT FALSE,
+    signup_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (game_id) REFERENCES games (id)
+  )`);
 });
 
-async function loadGameDetails() {
-    console.log('Loading game details for ID:', gameId);
-    
-    try {
-        const response = await fetch(`/api/games/${gameId}`);
-        console.log('API Response status:', response.status);
-        
-        if (!response.ok) {
-            throw new Error(`HTTP ${response.status}`);
-        }
-        
-        const data = await response.json();
-        console.log('Game data received:', data);
-        
-        displayGameDetails(data);
-        
-    } catch (error) {
-        console.error('Error loading game:', error);
-        document.getElementById('loading').innerHTML = `
-            <h3>❌ Error Loading Game</h3>
-            <p>Could not load game details. Please try again.</p>
-            <p><small>Error: ${error.message}</small></p>
-        `;
+app.get('/api/games/:id', (req, res) => {
+  console.log('API call: GET /api/games/' + req.params.id);
+  
+  db.get(`SELECT g.*, COUNT(s.id) as current_players
+          FROM games g
+          LEFT JOIN signups s ON g.id = s.game_id
+          WHERE g.id = ?`, [req.params.id], (err, row) => {
+    if (err) {
+      console.error('Database error:', err);
+      res.status(500).json({ error: 'Database error' });
+      return;
     }
-}
+    if (!row) {
+      console.log('Game not found for ID:', req.params.id);
+      res.status(404).json({ error: 'Game not found' });
+      return;
+    }
+    console.log('Returning game data:', row);
+    res.json(row);
+  });
+});
 
-function displayGameDetails(game) {
-    console.log('Displaying game details:', game);
+app.get('/api/admin/games', (req, res) => {
+  console.log('API call: GET /api/admin/games');
+  
+  db.all(`SELECT g.*, COUNT(s.id) as signups
+          FROM games g
+          LEFT JOIN signups s ON g.id = s.game_id
+          GROUP BY g.id
+          ORDER BY g.date, g.time`, (err, rows) => {
+    if (err) {
+      console.error('Database error:', err);
+      res.status(500).json({ error: 'Database error' });
+      return;
+    }
+    console.log('Returning games:', rows ? rows.length : 0);
+    res.json(rows || []);
+  });
+});
+
+app.get('/api/admin/games/:id/signups', (req, res) => {
+  console.log('API call: GET /api/admin/games/' + req.params.id + '/signups');
+  
+  db.all(`SELECT s.*,
+          (s.speed + s.passing + s.shooting + s.defending) / 4.0 as avg_skill
+          FROM signups s
+          WHERE s.game_id = ?
+          ORDER BY s.signup_time`, [req.params.id], (err, rows) => {
+    if (err) {
+      console.error('Database error:', err);
+      res.status(500).json({ error: 'Database error' });
+      return;
+    }
+    console.log('Returning signups:', rows ? rows.length : 0);
+    res.json(rows || []);
+  });
+});
+
+app.post('/api/signup/:gameId', (req, res) => {
+  const gameId = req.params.gameId;
+  console.log('API call: POST /api/signup/' + gameId);
+  
+  const { name, position, age, speed, passing, shooting, defending } = req.body;
+  
+  db.get(`SELECT g.max_players, COUNT(s.id) as current_players
+          FROM games g
+          LEFT JOIN signups s ON g.id = s.game_id
+          WHERE g.id = ?`, [gameId], (err, game) => {
     
-    const loadingDiv = document.getElementById('loading');
-    const gameInfoDiv = document.getElementById('game-info');
-    const gameFullDiv = document.getElementById('game-full');
-    
-    if (!loadingDiv || !gameInfoDiv) {
-        console.error('Required elements not found in HTML');
-        return;
+    if (err) {
+      console.error('Database error:', err);
+      res.status(500).json({ error: 'Database error' });
+      return;
     }
     
-    loadingDiv.style.display = 'none';
+    if (!game) {
+      console.log('Game not found for signup:', gameId);
+      res.status(404).json({ error: 'Game not found' });
+      return;
+    }
     
     if (game.current_players >= game.max_players) {
-        if (gameFullDiv) gameFullDiv.style.display = 'block';
+      console.log('Game is full:', gameId);
+      res.status(400).json({ error: 'Game is full' });
+      return;
+    }
+    
+    db.run(`INSERT INTO signups (game_id, name, position, age, speed, passing, shooting, defending)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+           [gameId, name, position, age, speed, passing, shooting, defending],
+           function(err) {
+      if (err) {
+        console.error('Signup error:', err);
+        res.status(500).json({ error: 'Signup failed' });
         return;
-    }
-    
-    gameInfoDiv.style.display = 'block';
-    
-    const elements = {
-        'game-title': game.title,
-        'game-date': formatDate(game.date),
-        'game-time': game.time,
-        'game-location': game.location,
-        'game-cost': game.cost.toFixed(2),
-        'current-players': game.current_players || 0,
-        'max-players': game.max_players
-    };
-    
-    for (const [id, value] of Object.entries(elements)) {
-        const element = document.getElementById(id);
-        if (element) {
-            element.textContent = value;
-        } else {
-            console.warn(`Element not found: ${id}`);
-        }
-    }
-}
-
-function formatDate(dateString) {
-    try {
-        const date = new Date(dateString);
-        return date.toLocaleDateString('en-US', {
-            weekday: 'long',
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric'
-        });
-    } catch (error) {
-        return dateString;
-    }
-}
-
-function setupStarRatings() {
-    console.log('Setting up star ratings...');
-    
-    const starRatings = document.querySelectorAll('.star-rating');
-    
-    starRatings.forEach(rating => {
-        const skill = rating.dataset.skill;
-        const stars = rating.querySelectorAll('.star');
-        
-        if (!skill || stars.length === 0) {
-            console.warn('Star rating setup issue:', skill, stars.length);
-            return;
-        }
-        
-        updateStarDisplay(stars, 3);
-        skillRatings[skill] = 3;
-        
-        stars.forEach((star, index) => {
-            star.addEventListener('click', () => {
-                const value = parseInt(star.dataset.value);
-                skillRatings[skill] = value;
-                updateStarDisplay(stars, value);
-                console.log('Skill rating updated:', skill, value);
-            });
-            
-            star.addEventListener('mouseenter', () => {
-                const value = parseInt(star.dataset.value);
-                updateStarHover(stars, value);
-            });
-            
-            star.addEventListener('mouseleave', () => {
-                updateStarDisplay(stars, skillRatings[skill]);
-            });
-        });
+      }
+      console.log('Signup successful:', this.lastID);
+      res.json({
+        success: true,
+        message: 'Successfully signed up!',
+        signupId: this.lastID
+      });
     });
-}
+  });
+});
 
-function updateStarDisplay(stars, rating) {
-    stars.forEach((star, index) => {
-        star.classList.remove('active', 'hover');
-        if (index < rating) {
-            star.classList.add('active');
-        }
-    });
-}
-
-function updateStarHover(stars, rating) {
-    stars.forEach((star, index) => {
-        star.classList.remove('active', 'hover');
-        if (index < rating) {
-            star.classList.add('hover');
-        }
-    });
-}
-
-function setupForm() {
-    console.log('Setting up form...');
-    
-    const signupForm = document.getElementById('signup-form');
-    if (!signupForm) {
-        console.error('Signup form not found');
-        return;
+app.post('/api/admin/games', (req, res) => {
+  console.log('API call: POST /api/admin/games');
+  
+  const { title, date, time, location, cost, max_players } = req.body;
+  
+  db.run(`INSERT INTO games (title, date, time, location, cost, max_players)
+          VALUES (?, ?, ?, ?, ?, ?)`,
+         [title, date, time, location, cost, max_players],
+         function(err) {
+    if (err) {
+      console.error('Create game error:', err);
+      res.status(500).json({ error: err.message });
+      return;
     }
-    
-    signupForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        console.log('Form submitted');
-        
-        const submitButton = signupForm.querySelector('button[type="submit"]');
-        const originalText = submitButton.textContent;
-        
-        submitButton.disabled = true;
-        submitButton.textContent = '⚽ Signing Up...';
-        
-        const formData = {
-            name: document.getElementById('name').value.trim(),
-            position: document.getElementById('position').value,
-            age: parseInt(document.getElementById('age').value),
-            speed: skillRatings.speed,
-            passing: skillRatings.passing,
-            shooting: skillRatings.shooting,
-            defending: skillRatings.defending
-        };
-        
-        console.log('Form data:', formData);
-        
-        try {
-            const response = await fetch(`/api/signup/${gameId}`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(formData)
-            });
-            
-            const result = await response.json();
-            console.log('Signup response:', result);
-            
-            if (response.ok) {
-                showSuccess(result.message);
-                signupForm.style.display = 'none';
-            } else {
-                showError(result.error || 'Signup failed. Please try again.');
-                submitButton.disabled = false;
-                submitButton.textContent = originalText;
-            }
-            
-        } catch (error) {
-            console.error('Signup error:', error);
-            showError('Network error. Please check your connection and try again.');
-            submitButton.disabled = false;
-            submitButton.textContent = originalText;
+    console.log('Game created:', this.lastID);
+    res.json({ id: this.lastID, signup_link: `/signup/${this.lastID}` });
+  });
+});
+
+app.put('/api/admin/signups/:id/payment', (req, res) => {
+  console.log('API call: PUT /api/admin/signups/' + req.params.id + '/payment');
+  
+  const { paid } = req.body;
+  
+  db.run(`UPDATE signups SET paid = ? WHERE id = ?`, [paid, req.params.id], (err) => {
+    if (err) {
+      console.error('Payment update error:', err);
+      res.status(500).json({ error: err.message });
+      return;
+    }
+    console.log('Payment updated:', req.params.id);
+    res.json({ success: true });
+  });
+});
+
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+app.get('/signup/:gameId', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'signup.html'));
+});
+
+app.get('/admin', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'admin.html'));
+});
+
+app.get('/signups/:gameId', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'signups.html'));
+});
+
+app.use((req, res) => {
+  console.log('404 - Route not found:', req.method, req.url);
+  
+  if (req.url.startsWith('/api/')) {
+    res.status(404).json({ error: 'API endpoint not found' });
+    return;
+  }
+  
+  res.status(404).send(`
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>404 - Page Not Found</title>
+      <style>
+        body { 
+          font-family: Arial, sans-serif; 
+          max-width: 600px; 
+          margin: 100px auto; 
+          text-align: center; 
+          padding: 20px;
         }
-    });
-}
+        .error-container {
+          background: #f8f9fa;
+          padding: 40px;
+          border-radius: 10px;
+          box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .back-link {
+          display: inline-block;
+          background: #28a745;
+          color: white;
+          padding: 10px 20px;
+          text-decoration: none;
+          border-radius: 5px;
+          margin-top: 20px;
+        }
+      </style>
+    </head>
+    <body>
+      <div class="error-container">
+        <h1>⚽ 404 - Page Not Found</h1>
+        <p>The page you're looking for doesn't exist.</p>
+        <a href="/admin" class="back-link">Go to Admin Panel</a>
+      </div>
+    </body>
+    </html>
+  `);
+});
 
-function showSuccess(message) {
-    const messageDiv = document.getElementById('message');
-    if (messageDiv) {
-        messageDiv.innerHTML = `
-            <div class="success-message">
-                <h3>🎉 Success!</h3>
-                <p>${message}</p>
-                <p><strong>What's next?</strong></p>
-                <ul style="text-align: left; margin-top: 10px;">
-                    <li>You'll receive payment details</li>
-                    <li>Mark your calendar for the game</li>
-                    <li>Bring your soccer gear and water</li>
-                    <li>Have fun and play fair! ⚽</li>
-                </ul>
-            </div>
-        `;
-        messageDiv.scrollIntoView({ behavior: 'smooth' });
-    }
-}
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`🚀 Soccer Signup Platform running on port ${PORT}`);
+  console.log(`📋 Admin Panel: http://localhost:${PORT}/admin`);
+  console.log(`🌐 Production URL will be provided by your hosting service`);
+});
 
-function showError(message) {
-    const messageDiv = document.getElementById('message');
-    if (messageDiv) {
-        messageDiv.innerHTML = `
-            <div class="error-message">
-                <h3>❌ Error</h3>
-                <p>${message}</p>
-            </div>
-        `;
-        messageDiv.scrollIntoView({ behavior: 'smooth' });
-    }
-}
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught Exception:', err);
+});
 
-console.log('🚀 Signup.js loaded successfully');
+process.on('unhandledRejection', (err) => {
+  console.error('Unhandled Rejection:', err);
+});
